@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puls – Deutsch für die Pflege B2 · Valoris</title>
+<meta name="description" content="Puls – manuel d'allemand pour les soins infirmiers, niveau B2. Commande en ligne gratuite, paiement à la livraison en Tunisie.">
+<script>
+/* =====================================================================
+   EINSTELLUNGEN – HIER KANNST DU ALLES ÄNDERN (Preise, Produkte, Codes)
+   =====================================================================
+   PRODUKTE:
+   - Preis ändern:      bei "preis:" die Zahl ändern (in TND)
+   - Produkt löschen:   den ganzen Block { ... }, löschen
+   - Produkt hinzufügen: einen Block kopieren, darunter einfügen und
+                         "id" (ohne Leerzeichen), Namen, Preis und Bild ändern
+   - "vorschau": Name der Vorschau-Bilder im Ordner "preview"
+                 (z. B. "puls1" -> preview/puls1_01.jpg bis _18.jpg),
+                 leer lassen "" wenn es keine Vorschau gibt
+   ===================================================================== */
+const PRODUKTE = [
+  { id: "puls1",   preis: 30, bild: "cover_puls1.jpg", vorschau: "puls1",
+    name: { fr: "Puls 1 – Livre", de: "Puls 1 – Buch", ar: "Puls 1 – كتاب" },
+    text: { fr: "Stations 1–20 : hôpital, soins de base, médecine interne. 220 pages en couleur, avec corrigés et transcriptions.",
+            de: "Stationen 1–20: Krankenhaus, Grundpflege, Innere Medizin. 220 Seiten in Farbe, mit Lösungen und Hörskripten.",
+            ar: "المحطات 1–20: المستشفى، التمريض الأساسي، الطب الباطني. 220 صفحة ملونة، مع الحلول ونصوص الاستماع." } },
+  { id: "puls2",   preis: 30, bild: "cover_puls2.jpg", vorschau: "puls2",
+    name: { fr: "Puls 2 – Livre", de: "Puls 2 – Buch", ar: "Puls 2 – كتاب" },
+    text: { fr: "Stations 21–40 : urgences, chirurgie, spécialités, examen. 204 pages en couleur, avec corrigés et transcriptions.",
+            de: "Stationen 21–40: Notaufnahme, Chirurgie, Fachbereiche, Prüfung. 204 Seiten in Farbe, mit Lösungen und Hörskripten.",
+            ar: "المحطات 21–40: الطوارئ، الجراحة، التخصصات، الامتحان. 204 صفحة ملونة، مع الحلول ونصوص الاستماع." } },
+  { id: "audio",   preis: 2, bild: "", vorschau: "",
+    name: { fr: "CD audio (Puls 1 + 2)", de: "Audio-CD (Puls 1 + 2)", ar: "قرص صوتي CD (Puls 1 + 2)" },
+    text: { fr: "Tous les dialogues des deux livres sur CD (MP3).",
+            de: "Alle Hörtexte beider Bücher auf CD (MP3).",
+            ar: "جميع الحوارات للكتابين على قرص CD (MP3)." } },
+];
+
+/* RABATTCODES: Code in GROSSBUCHSTABEN, Rabatt in Prozent.
+   Code löschen = Zeile löschen. Neuer Code = neue Zeile.            */
+const RABATTCODES = {
+  "PULS10": 10,     // 10 % Rabatt
+  "SCHULE20": 20,   // 20 % Rabatt für Schulen
+};
+
+/* GOOGLE-TABELLE: Hier die Web-App-Adresse aus Apps Script einfügen
+   (beginnt mit https://script.google.com/macros/s/...). Leer = nur WhatsApp. */
+const GOOGLE_TABELLE = "https://script.google.com/macros/s/AKfycbyOd8fEHol_Y5DyDFEj9m04zXkeLYzDd-r30n4WDyiVbB3RTMpoC5BIhYuXfxPb8NC9uQ/exec";
+
+/* WHATSAPP-NUMMER (ohne + und ohne Leerzeichen) */
+const WHATSAPP = "491633711071";
+const WAEHRUNG = "TND";
+
+/* LIEFERUNG: Lieferkosten pro Bestellung (in TND). 0 = kostenlos. */
+const LIEFERUNG = 8;
+/* ===================== ENDE DER EINSTELLUNGEN ===================== */
+</script>
+<style>
+:root { --blau:#0a3cf0; --lila:#7a14f2; --tuerkis:#00a6f6; --navy:#0b1a3a; --grau:#5b6b8f; --hell:#f4f7ff; --gruen:#25d366; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: "Segoe UI", Roboto, Arial, sans-serif; color: var(--navy); background:#fff; line-height:1.5; }
+[dir=rtl] body, html[dir=rtl] { font-family: "Segoe UI", Tahoma, Arial, sans-serif; }
+img { max-width:100%; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 18px; }
+header { position: sticky; top:0; background: rgba(255,255,255,.95); backdrop-filter: blur(6px); border-bottom: 1px solid #e6ebf7; z-index: 10; }
+header .wrap { display:flex; align-items:center; justify-content: space-between; height: 64px; gap: 10px; }
+header img { height: 34px; }
+.lang button { border: 1px solid #d6def3; background:#fff; color: var(--navy); padding: 6px 10px; border-radius: 20px; cursor:pointer; font-weight:600; }
+.lang button.on { background: var(--blau); color:#fff; border-color: var(--blau); }
+.hero { background: linear-gradient(135deg, #0b1a3a 0%, #0a3cf0 60%, #7a14f2 100%); color:#fff; padding: 56px 0 64px; }
+.hero .wrap { display:grid; grid-template-columns: 1.2fr 1fr; gap: 30px; align-items:center; }
+.hero h1 { font-size: 40px; line-height:1.1; margin: 8px 0 12px; }
+.hero p { font-size: 18px; opacity:.92; margin: 0 0 22px; }
+.pill { display:inline-block; background: rgba(255,255,255,.15); padding: 5px 12px; border-radius: 20px; font-weight:700; font-size: 13px; letter-spacing: 1px; }
+.btn { display:inline-block; border:0; cursor:pointer; padding: 13px 22px; border-radius: 30px; font-weight:700; font-size:16px; text-decoration:none; }
+.btn.weiss { background:#fff; color: var(--blau); }
+.btn.wa { background: var(--gruen); color:#fff; }
+.btn.blau { background: linear-gradient(90deg, var(--tuerkis), var(--blau) 60%, var(--lila)); color:#fff; }
+.btns { display:flex; flex-wrap: wrap; gap: 12px; }
+.covers { display:flex; gap: 16px; justify-content:center; }
+.covers img { width: 46%; border-radius: 10px; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+.covers img:nth-child(2) { transform: translateY(24px); }
+section { padding: 54px 0; }
+h2 { font-size: 30px; margin: 0 0 8px; }
+.sub { color: var(--grau); margin: 0 0 28px; }
+.vorteile { display:grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+.vorteil { background: var(--hell); border-radius: 14px; padding: 18px; }
+.vorteil b { display:block; font-size: 17px; margin-bottom: 4px; }
+.produkte { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 18px; }
+.karte { border: 1px solid #e3e9f8; border-radius: 16px; overflow:hidden; display:flex; flex-direction:column; background:#fff; }
+.karte .bild { height: 210px; background: linear-gradient(135deg,#eef2ff,#f7f0ff); display:flex; align-items:center; justify-content:center; }
+.karte .bild img { height: 190px; border-radius: 6px; box-shadow: 0 6px 18px rgba(11,26,58,.2); }
+.karte .bild .ico { font-size: 54px; }
+.karte .inhalt { padding: 16px; flex:1; display:flex; flex-direction:column; gap: 8px; }
+.karte h3 { margin:0; font-size: 18px; }
+.karte .preis { font-size: 22px; font-weight: 800; color: var(--blau); }
+.karte .text { color: var(--grau); font-size: 14px; flex:1; }
+.menge { display:flex; align-items:center; gap: 8px; }
+.menge button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #cfd8f3; background:#fff; font-size: 20px; cursor:pointer; color: var(--blau); }
+.menge input { width: 56px; text-align:center; font-size: 17px; padding: 6px; border: 1px solid #cfd8f3; border-radius: 8px; }
+.link { background:none; border:0; color: var(--blau); font-weight:700; cursor:pointer; padding:0; text-align:left; }
+.formular { display:grid; grid-template-columns: 1.3fr 1fr; gap: 26px; align-items:start; }
+.feld { margin-bottom: 12px; }
+.feld label { display:block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.feld input, .feld select, .feld textarea { width:100%; padding: 11px 12px; border: 1px solid #cfd8f3; border-radius: 10px; font-size: 16px; font-family: inherit; }
+.zwei { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.korb { background: var(--hell); border-radius: 16px; padding: 18px; position: sticky; top: 80px; }
+.korb table { width:100%; border-collapse: collapse; font-size: 15px; }
+.korb td { padding: 6px 0; border-bottom: 1px solid #dde4f6; }
+.korb td:last-child { text-align: right; white-space: nowrap; }
+.summe { font-size: 22px; font-weight: 800; color: var(--blau); }
+.hinweis { font-size: 13px; color: var(--grau); }
+.fehler { color: #c2253c; font-weight:600; font-size: 14px; min-height: 20px; }
+.ok { background:#e9fbf0; border:1px solid #9be3b5; color:#0f7a3d; padding: 12px; border-radius: 10px; display:none; }
+footer { background: var(--navy); color:#c9d3ee; padding: 30px 0; font-size: 14px; }
+footer a { color:#fff; }
+.wa-float { position: fixed; bottom: 18px; right: 18px; background: var(--gruen); color:#fff; width: 58px; height: 58px; border-radius: 50%; display:flex; align-items:center; justify-content:center; box-shadow: 0 8px 20px rgba(0,0,0,.25); z-index: 20; text-decoration:none; font-size: 28px; }
+[dir=rtl] .wa-float { right:auto; left: 18px; }
+/* Vorschau (Leser) */
+#leser { position: fixed; inset:0; background: rgba(11,26,58,.92); display:none; z-index: 50; flex-direction: column; align-items:center; justify-content:center; padding: 12px; }
+#leser .seite { max-height: 82vh; max-width: 92vw; background:#fff; border-radius: 6px; user-select:none; -webkit-user-drag: none; pointer-events: none; }
+#leser .leiste { display:flex; gap: 12px; align-items:center; margin-top: 12px; color:#fff; font-weight:700; }
+#leser .leiste button { background:#fff; color: var(--navy); border:0; padding: 10px 16px; border-radius: 20px; font-weight:700; cursor:pointer; }
+#leser .zu { position:absolute; top: 14px; right: 18px; background:#fff; border:0; width: 40px; height: 40px; border-radius:50%; font-size: 22px; cursor:pointer; }
+#leser .bildbox { position: relative; }
+#leser .bildbox:after { content:""; position:absolute; inset:0; } /* Schutzschicht über dem Bild */
+@media print { body * { display:none !important; } body:before { content: "Impression non autorisée – Valoris"; display:block; padding: 40px; font-size: 24px; } }
+@media (max-width: 820px) {
+  .hero .wrap, .formular { grid-template-columns: 1fr; }
+  .vorteile { grid-template-columns: 1fr 1fr; }
+  .hero h1 { font-size: 30px; }
+  .korb { position: static; }
+}
+</style>
+</head>
+<body oncontextmenu="return false">
+
+<header><div class="wrap">
+  <img src="logo.png" alt="Valoris">
+  <div class="lang">
+    <button data-l="fr" class="on">FR</button>
+    <button data-l="ar">عربي</button>
+    <button data-l="de">DE</button>
+  </div>
+</div></header>
+
+<div class="hero"><div class="wrap">
+  <div>
+    <span class="pill" data-t="pill"></span>
+    <h1 data-t="titel"></h1>
+    <p data-t="untertitel"></p>
+    <div class="btns">
+      <a href="#reserver" class="btn weiss" data-t="btnReserver"></a>
+      <a class="btn wa" id="waHero" target="_blank" data-t="btnWa"></a>
+    </div>
+  </div>
+  <div class="covers"><img src="cover_puls1.jpg" alt="Puls 1"><img src="cover_puls2.jpg" alt="Puls 2"></div>
+</div></div>
+
+<section><div class="wrap">
+  <h2 data-t="warumTitel"></h2>
+  <p class="sub" data-t="warumSub"></p>
+  <div class="vorteile">
+    <div class="vorteil"><b data-t="v1t"></b><span data-t="v1"></span></div>
+    <div class="vorteil"><b data-t="v2t"></b><span data-t="v2"></span></div>
+    <div class="vorteil"><b data-t="v3t"></b><span data-t="v3"></span></div>
+    <div class="vorteil"><b data-t="v4t"></b><span data-t="v4"></span></div>
+  </div>
+</div></section>
+
+<section style="background:#fafbff"><div class="wrap">
+  <h2 data-t="produkteTitel"></h2>
+  <p class="sub" data-t="produkteSub"></p>
+  <div class="produkte" id="produkte"></div>
+</div></section>
+
+<section id="reserver"><div class="wrap">
+  <h2 data-t="formTitel"></h2>
+  <p class="sub" data-t="formSub"></p>
+  <div class="formular">
+    <form id="form" autocomplete="on">
+      <div class="zwei">
+        <div class="feld"><label data-t="fVorname"></label><input name="vorname" required></div>
+        <div class="feld"><label data-t="fNachname"></label><input name="nachname" required></div>
+      </div>
+      <div class="feld"><label data-t="fFirma"></label><input name="firma"></div>
+      <div class="feld"><label data-t="fTel"></label><input name="tel" type="tel" value="+216 " required></div>
+      <div class="feld"><label data-t="fStrasse"></label><input name="strasse" required></div>
+      <div class="zwei">
+        <div class="feld"><label data-t="fOrt"></label><input name="ort" required></div>
+        <div class="feld"><label data-t="fPlz"></label><input name="plz" inputmode="numeric" required></div>
+      </div>
+      <div class="feld"><label data-t="fGouv"></label><select name="gouv" id="gouv" required></select></div>
+      <div class="feld"><label data-t="fCode"></label><input name="code" id="code" style="text-transform:uppercase"></div>
+      <div class="feld"><label data-t="fNotiz"></label><textarea name="notiz" rows="2"></textarea></div>
+      <div class="feld"><label style="font-weight:400"><input type="checkbox" name="ok" required style="width:auto"> <span data-t="fDaten"></span></label></div>
+      <div class="fehler" id="fehler"></div>
+      <button class="btn blau" type="submit" data-t="btnSenden"></button>
+      <p class="hinweis" data-t="fHinweis"></p>
+      <div class="ok" id="ok" data-t="danke"></div>
+    </form>
+    <div class="korb">
+      <h3 style="margin-top:0" data-t="korbTitel"></h3>
+      <table id="korb"></table>
+      <p class="summe" id="summe"></p>
+      <p class="hinweis" data-t="korbHinweis"></p>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <b>Valoris</b> · Zeppelinstraße 34 · 61352 Bad Homburg · Germany · <a href="https://valoris-recruiting.de" target="_blank">valoris-recruiting.de</a><br>
+  WhatsApp: <a id="waFooter" target="_blank">+49 163 3711071</a><br>
+  <span data-t="copyright"></span>
+</div></footer>
+
+<a class="wa-float" id="waFloat" target="_blank" title="WhatsApp">✆</a>
+
+<div id="leser">
+  <button class="zu" onclick="leserZu()">×</button>
+  <div class="bildbox"><img class="seite" id="leserBild" alt="" draggable="false"></div>
+  <div class="leiste">
+    <button onclick="blättern(-1)">‹</button>
+    <span id="leserNr"></span>
+    <button onclick="blättern(1)">›</button>
+  </div>
+</div>
+
+<script>
+const T = {
+ fr: { pill:"NIVEAU B2 · KENNTNISPRÜFUNG", titel:"Puls – l'allemand pour les soins infirmiers",
+   untertitel:"Deux livres, 40 stations hospitalières, 80 dialogues audio. Préparez votre travail en Allemagne et la Kenntnisprüfung.",
+   btnReserver:"Commander gratuitement en ligne", btnWa:"Commander par WhatsApp",
+   warumTitel:"Pourquoi Puls ?", warumSub:"Conçu par des professionnels de santé travaillant en Allemagne.",
+   v1t:"40 stations", v1:"Du premier jour à l'examen : urgences, chirurgie, psychiatrie, pédiatrie…",
+   v2t:"80 dialogues", v2:"Transmissions, appels au médecin, entretiens avec les patients.",
+   v3t:"Kenntnisprüfung", v3:"Cas cliniques et exercices comme à l'examen.",
+   v4t:"Livres imprimés", v4:"En couleur, livrés chez vous. Paiement en espèces à la livraison.",
+   produkteTitel:"Nos produits", produkteSub:"Choisissez les quantités. Le total est calculé automatiquement.",
+   apercu:"Feuilleter 18 pages", qte:"Quantité",
+   formTitel:"Commande en ligne gratuite", formSub:"Sans paiement en ligne. Notre partenaire en Tunisie vous appelle pour confirmer. Paiement en espèces à la livraison.",
+   fVorname:"Prénom *", fNachname:"Nom *", fFirma:"École / Entreprise (facultatif)", fTel:"Téléphone *",
+   fStrasse:"Adresse (rue, numéro) *", fOrt:"Ville *", fPlz:"Code postal *", fGouv:"Gouvernorat *",
+   fCode:"Code promo (facultatif)", fNotiz:"Remarque (facultatif)",
+   fDaten:"J'accepte que mes données soient utilisées pour traiter ma commande.",
+   btnSenden:"Envoyer la commande", fHinweis:"Après l'envoi, WhatsApp s'ouvre avec votre commande. Appuyez simplement sur « Envoyer ».",
+   danke:"Merci ! Votre commande est prête dans WhatsApp. Nous vous appelons bientôt.",
+   korbTitel:"Votre commande", korbLeer:"Aucun produit choisi.", rabatt:"Remise", liefer:"Livraison", total:"Total",
+   korbHinweis:"Prix en dinars tunisiens (TND), livraison selon accord téléphonique.",
+   errProdukt:"Veuillez choisir au moins un produit.", errTel:"Veuillez saisir un numéro de téléphone valide.",
+   errCode:"Ce code promo n'est pas valable.", choisir:"— choisir —",
+   copyright:"© 2026 Valoris. Tous droits réservés. Aperçu protégé – reproduction interdite.",
+   waText:"Bonjour, je souhaite commander les livres Puls." },
+ de: { pill:"NIVEAU B2 · KENNTNISPRÜFUNG", titel:"Puls – Deutsch für die Pflege",
+   untertitel:"Zwei Bücher, 40 Stationen, 80 Hörtexte. Vorbereitung auf die Arbeit in Deutschland und die Kenntnisprüfung.",
+   btnReserver:"Kostenlos online bestellen", btnWa:"Per WhatsApp bestellen",
+   warumTitel:"Warum Puls?", warumSub:"Entwickelt von Pflegefachkräften, die in Deutschland arbeiten.",
+   v1t:"40 Stationen", v1:"Vom ersten Arbeitstag bis zur Prüfung: Notaufnahme, Chirurgie, Psychiatrie, Pädiatrie …",
+   v2t:"80 Hörtexte", v2:"Übergaben, Arztanrufe, Patientengespräche.",
+   v3t:"Kenntnisprüfung", v3:"Fallbeispiele und Übungen wie in der Prüfung.",
+   v4t:"Gedruckte Bücher", v4:"In Farbe, nach Hause geliefert. Barzahlung bei Lieferung.",
+   produkteTitel:"Unsere Produkte", produkteSub:"Wählen Sie die Anzahl. Die Summe wird automatisch berechnet.",
+   apercu:"18 Seiten ansehen", qte:"Anzahl",
+   formTitel:"Kostenlose Online-Bestellung", formSub:"Ohne Online-Zahlung. Unser Partner in Tunesien ruft Sie zur Bestätigung an. Barzahlung bei Lieferung.",
+   fVorname:"Vorname *", fNachname:"Nachname *", fFirma:"Schule / Firma (optional)", fTel:"Telefon *",
+   fStrasse:"Straße, Hausnummer *", fOrt:"Ort *", fPlz:"Postleitzahl *", fGouv:"Gouvernorat *",
+   fCode:"Rabattcode (optional)", fNotiz:"Bemerkung (optional)",
+   fDaten:"Ich bin einverstanden, dass meine Daten für die Bestellung verwendet werden.",
+   btnSenden:"Bestellung senden", fHinweis:"Nach dem Senden öffnet sich WhatsApp mit Ihrer Bestellung. Tippen Sie nur noch auf „Senden“.",
+   danke:"Danke! Ihre Bestellung ist in WhatsApp vorbereitet. Wir rufen Sie bald an.",
+   korbTitel:"Ihre Bestellung", korbLeer:"Noch kein Produkt gewählt.", rabatt:"Rabatt", liefer:"Lieferung", total:"Gesamt",
+   korbHinweis:"Preise in Tunesischen Dinar (TND), Lieferung nach telefonischer Absprache.",
+   errProdukt:"Bitte wählen Sie mindestens ein Produkt.", errTel:"Bitte geben Sie eine gültige Telefonnummer ein.",
+   errCode:"Dieser Rabattcode ist nicht gültig.", choisir:"— bitte wählen —",
+   copyright:"© 2026 Valoris. Alle Rechte vorbehalten. Geschützte Vorschau – Vervielfältigung verboten.",
+   waText:"Hallo, ich möchte die Puls-Bücher bestellen." },
+ ar: { pill:"المستوى B2 · امتحان المعادلة", titel:"Puls – اللغة الألمانية للتمريض",
+   untertitel:"كتابان، 40 محطة في المستشفى، 80 حوارًا صوتيًا. استعد للعمل في ألمانيا ولامتحان المعادلة.",
+   btnReserver:"اطلب مجانًا عبر الإنترنت", btnWa:"اطلب عبر واتساب",
+   warumTitel:"لماذا Puls؟", warumSub:"من إعداد مهنيين في التمريض يعملون في ألمانيا.",
+   v1t:"40 محطة", v1:"من أول يوم عمل حتى الامتحان: الطوارئ، الجراحة، الطب النفسي، طب الأطفال…",
+   v2t:"80 حوارًا", v2:"التسليم بين المناوبات، الاتصال بالطبيب، الحديث مع المرضى.",
+   v3t:"امتحان المعادلة", v3:"حالات وتمارين كما في الامتحان.",
+   v4t:"كتب مطبوعة", v4:"بالألوان، توصيل إلى المنزل، الدفع نقدًا عند الاستلام.",
+   produkteTitel:"منتجاتنا", produkteSub:"اختر الكمية، ويُحسب المجموع تلقائيًا.",
+   apercu:"تصفح 18 صفحة", qte:"الكمية",
+   formTitel:"طلب مجاني عبر الإنترنت", formSub:"بدون دفع عبر الإنترنت. سيتصل بك شريكنا في تونس للتأكيد. الدفع نقدًا عند الاستلام.",
+   fVorname:"الاسم *", fNachname:"اللقب *", fFirma:"المدرسة / الشركة (اختياري)", fTel:"رقم الهاتف *",
+   fStrasse:"العنوان (الشارع، الرقم) *", fOrt:"المدينة *", fPlz:"الرمز البريدي *", fGouv:"الولاية *",
+   fCode:"رمز التخفيض (اختياري)", fNotiz:"ملاحظة (اختياري)",
+   fDaten:"أوافق على استعمال بياناتي لمعالجة الطلب.",
+   btnSenden:"إرسال الطلب", fHinweis:"بعد الإرسال يُفتح واتساب مع طلبك، اضغط فقط على «إرسال».",
+   danke:"شكرًا! طلبك جاهز في واتساب. سنتصل بك قريبًا.",
+   korbTitel:"طلبك", korbLeer:"لم تختر أي منتج بعد.", rabatt:"تخفيض", liefer:"التوصيل", total:"المجموع",
+   korbHinweis:"الأسعار بالدينار التونسي (TND)، التوصيل حسب الاتفاق الهاتفي.",
+   errProdukt:"يرجى اختيار منتج واحد على الأقل.", errTel:"يرجى إدخال رقم هاتف صحيح.",
+   errCode:"رمز التخفيض غير صالح.", choisir:"— اختر —",
+   copyright:"© 2026 Valoris. جميع الحقوق محفوظة. معاينة محمية – يمنع النسخ.",
+   waText:"مرحبًا، أريد طلب كتب Puls." },
+};
+const GOUV = ["Ariana","Béja","Ben Arous","Bizerte","Gabès","Gafsa","Jendouba","Kairouan","Kasserine","Kébili","Le Kef","Mahdia","La Manouba","Médenine","Monastir","Nabeul","Sfax","Sidi Bouzid","Siliana","Sousse","Tataouine","Tozeur","Tunis","Zaghouan"];
+let L = "fr";
+const menge = {}; PRODUKTE.forEach(p => menge[p.id] = 0);
+
+function t(k){ return (T[L] && T[L][k]) || T.fr[k] || ""; }
+function waLink(text){ return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(text); }
+
+function sprache(l){
+  L = l; document.documentElement.lang = l; document.documentElement.dir = (l === "ar") ? "rtl" : "ltr";
+  document.querySelectorAll("[data-t]").forEach(e => e.textContent = t(e.dataset.t));
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.l === l));
+  ["waHero","waFloat","waFooter"].forEach(id => document.getElementById(id).href = waLink(t("waText")));
+  const g = document.getElementById("gouv"), alt = g.value;
+  g.innerHTML = '<option value="">' + t("choisir") + '</option>' + GOUV.map(x => '<option>' + x + '</option>').join("");
+  g.value = alt;
+  zeigeProdukte(); rechne();
+  try { localStorage.setItem("puls_lang", l); } catch(e) {}
+}
+
+function zeigeProdukte(){
+  document.getElementById("produkte").innerHTML = PRODUKTE.map(p => `
+    <div class="karte">
+      <div class="bild">${p.bild ? `<img src="${p.bild}" alt="" draggable="false">` : `<span class="ico">${p.id === "audio" ? "💿" : "📘"}</span>`}</div>
+      <div class="inhalt">
+        <h3>${p.name[L] || p.name.fr}</h3>
+        <div class="preis">${p.preis} ${WAEHRUNG}</div>
+        <div class="text">${p.text[L] || p.text.fr}</div>
+        ${p.vorschau ? `<button class="link" onclick="leserAuf('${p.vorschau}')">📖 ${t("apercu")}</button>` : ""}
+        <div class="menge"><span>${t("qte")}</span>
+          <button type="button" onclick="aendere('${p.id}',-1)">−</button>
+          <input type="number" min="0" value="${menge[p.id]}" onchange="setze('${p.id}',this.value)">
+          <button type="button" onclick="aendere('${p.id}',1)">+</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+function aendere(id, d){ menge[id] = Math.max(0, (menge[id] || 0) + d); zeigeProdukte(); rechne(); }
+function setze(id, v){ menge[id] = Math.max(0, parseInt(v) || 0); rechne(); }
+
+function rabattProzent(){
+  const c = document.getElementById("code").value.trim().toUpperCase();
+  return c && RABATTCODES[c] !== undefined ? RABATTCODES[c] : 0;
+}
+function rechne(){
+  let summe = 0, zeilen = "";
+  PRODUKTE.forEach(p => { const m = menge[p.id]; if (m > 0) { const b = m * p.preis; summe += b;
+    zeilen += `<tr><td>${m} × ${p.name[L] || p.name.fr}</td><td>${b.toFixed(2)} ${WAEHRUNG}</td></tr>`; } });
+  const r = rabattProzent(), abzug = summe * r / 100;
+  if (r) zeilen += `<tr><td>${t("rabatt")} (${r} %)</td><td>− ${abzug.toFixed(2)} ${WAEHRUNG}</td></tr>`;
+  const lief = summe > 0 ? LIEFERUNG : 0;
+  if (lief) zeilen += `<tr><td>${t("liefer")}</td><td>${lief.toFixed(2)} ${WAEHRUNG}</td></tr>`;
+  const total = summe - abzug + lief;
+  document.getElementById("korb").innerHTML = zeilen || `<tr><td>${t("korbLeer")}</td><td></td></tr>`;
+  document.getElementById("summe").textContent = `${t("total")} : ${total.toFixed(2)} ${WAEHRUNG}`;
+  return { summe, r, abzug, lief, total };
+}
+
+document.getElementById("code").addEventListener("input", rechne);
+document.getElementById("form").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = new FormData(e.target), err = document.getElementById("fehler"); err.textContent = "";
+  const k = rechne();
+  if (k.summe <= 0) { err.textContent = t("errProdukt"); return; }
+  const tel = (f.get("tel") || "").replace(/[^\d+]/g, "");
+  if (tel.replace(/\D/g, "").length < 8) { err.textContent = t("errTel"); return; }
+  const code = (f.get("code") || "").trim().toUpperCase();
+  if (code && !k.r) { err.textContent = t("errCode"); return; }
+  const nr = "R" + new Date().toISOString().slice(2,10).replace(/-/g,"") + "-" + Math.floor(1000 + Math.random()*9000);
+  let msg = `*Commande Puls ${nr}*\n\n`;
+  PRODUKTE.forEach(p => { if (menge[p.id] > 0) msg += `• ${menge[p.id]} × ${p.name.fr} (${p.preis} ${WAEHRUNG})\n`; });
+  if (k.r) msg += `• Code ${code}: −${k.r} %\n`;
+  if (k.lief) msg += `• Livraison : ${k.lief} ${WAEHRUNG}\n`;
+  msg += `*Total : ${k.total.toFixed(2)} ${WAEHRUNG}*\n\n`;
+  msg += `Nom : ${f.get("vorname")} ${f.get("nachname")}\n`;
+  if (f.get("firma")) msg += `École/Entreprise : ${f.get("firma")}\n`;
+  msg += `Téléphone : ${f.get("tel")}\nAdresse : ${f.get("strasse")}, ${f.get("plz")} ${f.get("ort")}, ${f.get("gouv")}\n`;
+  if (f.get("notiz")) msg += `Remarque : ${f.get("notiz")}\n`;
+  msg += `Langue : ${L.toUpperCase()}\nSource : ${new URLSearchParams(location.search).get("src") || "site"}`;
+  if (GOOGLE_TABELLE) {
+    const m = {}; PRODUKTE.forEach(p => m[p.id] = menge[p.id]);
+    const daten = { nr, vorname: f.get("vorname"), nachname: f.get("nachname"), firma: f.get("firma"),
+      tel: f.get("tel"), strasse: f.get("strasse"), plz: f.get("plz"), ort: f.get("ort"), gouv: f.get("gouv"),
+      mengen: m, code, rabatt: k.r, lieferung: k.lief, total: Number(k.total.toFixed(2)), notiz: f.get("notiz"),
+      sprache: L, quelle: new URLSearchParams(location.search).get("src") || "site" };
+    try { fetch(GOOGLE_TABELLE, { method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(daten) }); } catch (x) {}
+  }
+  window.open(waLink(msg), "_blank");
+  document.getElementById("ok").style.display = "block";
+});
+
+/* Vorschau-Leser: nur Bilder mit Wasserzeichen, kein Speichern/Drucken */
+let leserBuch = "", leserSeite = 1; const MAX = 18;
+function leserAuf(b){ leserBuch = b; leserSeite = 1; zeigeSeite(); document.getElementById("leser").style.display = "flex"; }
+function leserZu(){ document.getElementById("leser").style.display = "none"; }
+function blättern(d){ leserSeite = Math.min(MAX, Math.max(1, leserSeite + d)); zeigeSeite(); }
+function zeigeSeite(){
+  document.getElementById("leserBild").src = `preview/${leserBuch}_${String(leserSeite).padStart(2,"0")}.jpg`;
+  document.getElementById("leserNr").textContent = `${leserSeite} / ${MAX}`;
+}
+document.addEventListener("keydown", e => {
+  if (document.getElementById("leser").style.display === "flex") {
+    if (e.key === "ArrowRight") blättern(L === "ar" ? -1 : 1);
+    if (e.key === "ArrowLeft") blättern(L === "ar" ? 1 : -1);
+    if (e.key === "Escape") leserZu();
+  }
+  if ((e.ctrlKey || e.metaKey) && ["s","p","u"].includes(e.key.toLowerCase())) e.preventDefault();
+});
+document.addEventListener("dragstart", e => { if (e.target.tagName === "IMG") e.preventDefault(); });
+
+document.querySelectorAll(".lang button").forEach(b => b.onclick = () => sprache(b.dataset.l));
+let start = "fr"; try { start = localStorage.getItem("puls_lang") || "fr"; } catch(e) {}
+sprache(start);
+</script>
+</body>
+</html>

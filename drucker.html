@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Puls · Impression (accès imprimeur)</title>
+<script>
+/* =====================================================================
+   EINSTELLUNGEN DRUCKER-SEITE
+   GOOGLE_TABELLE: dieselbe Web-App-Adresse wie in index.html.
+   Solange sie leer ist, läuft die Seite im TESTMODUS (Zählung nur auf
+   diesem PC, nicht in der Google-Tabelle).
+   ===================================================================== */
+const GOOGLE_TABELLE = "https://script.google.com/macros/s/AKfycbyOd8fEHol_Y5DyDFEj9m04zXkeLYzDd-r30n4WDyiVbB3RTMpoC5BIhYuXfxPb8NC9uQ/exec";
+const SEITEN_PRO_AUFTRAG = 60;   // Druck in Paketen (gerade Zahl = richtig bei beidseitigem Druck)
+const NUR_MIT_DESKTOP_SYMBOL = true;  // true = Seite funktioniert nur über das Symbol "Puls Drucken"
+</script>
+<style>
+:root{--blau:#0a3cf0;--navy:#0b1a3a;--grau:#5b6b8f;--rot:#d6334a;--gruen:#13a05f}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#f3f6fd;color:var(--navy);user-select:none;-webkit-user-select:none}
+.app{max-width:620px;margin:40px auto;padding:0 16px}
+.kopf{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.kopf img{height:34px}
+.kopf b{font-size:20px}
+.box{background:#fff;border-radius:16px;padding:26px;box-shadow:0 8px 30px rgba(11,26,58,.08)}
+h2{margin:0 0 6px;font-size:20px}
+p.sub{margin:0 0 18px;color:var(--grau);font-size:14px}
+label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+input,select{width:100%;padding:12px 14px;border:1.5px solid #cfd8ee;border-radius:10px;font-size:16px;font-family:inherit}
+input:focus{outline:none;border-color:var(--blau)}
+.buecher{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.buch{border:2px solid #cfd8ee;border-radius:12px;padding:14px;cursor:pointer;text-align:center;font-weight:700}
+.buch small{display:block;font-weight:400;color:var(--grau);margin-top:4px}
+.buch.an{border-color:var(--blau);background:#eef3ff;color:var(--blau)}
+button.gross{margin-top:20px;width:100%;padding:15px;border:0;border-radius:12px;background:var(--blau);color:#fff;font-size:17px;font-weight:700;cursor:pointer}
+button.gross:disabled{background:#9fb0d9;cursor:wait}
+.fehler{color:var(--rot);font-weight:600;margin-top:12px;min-height:1em}
+.ok{color:var(--gruen);font-weight:600}
+.balken{height:10px;background:#e3e9f7;border-radius:6px;overflow:hidden;margin:16px 0 6px}
+.balken i{display:block;height:100%;width:0;background:var(--blau);transition:width .2s}
+.status{font-size:14px;color:var(--grau)}
+.test{background:#fff4e5;color:#9a5b00;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.zeile{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid #eef1f8}
+.klein{font-size:12px;color:var(--grau);margin-top:14px}
+#druck{display:none}
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff}
+  .app{display:none!important}
+  #druck{display:block}
+  .seite{width:210mm;height:297mm;position:relative;overflow:hidden;page-break-after:always;break-after:page}
+  .seite:last-child{page-break-after:auto;break-after:auto}
+  .seite img{width:210mm;height:297mm;display:block}
+  .seite .nr{position:absolute;left:0;right:0;bottom:4.2mm;text-align:center;font:7pt Arial,sans-serif;color:#7d8aa8;letter-spacing:.2pt}
+}
+</style>
+</head>
+<body oncontextmenu="return false">
+<div class="app">
+  <div class="kopf"><img src="logo.png" alt=""><b>Puls · Impression</b></div>
+
+  <div class="box" id="s0" style="display:none">
+    <h2>Accès refusé</h2>
+    <p class="sub">Cette page fonctionne uniquement avec l'icône <b>« Puls Drucken »</b> sur le bureau de l'imprimeur.</p>
+  </div>
+
+  <div class="box" id="s1" style="display:none">
+    <h2>Accès imprimeur</h2>
+    <p class="sub">Entrez votre code personnel.</p>
+    <label for="code">Code</label>
+    <input id="code" type="password" autocomplete="off" placeholder="Code">
+    <button class="gross" id="los">Ouvrir</button>
+    <div class="fehler" id="f1"></div>
+  </div>
+
+  <div class="box" id="s2" style="display:none">
+    <div class="test" id="testhinweis" style="display:none">⚠ MODE TEST : le compteur n'est pas encore relié au tableau Google. Les impressions sont comptées seulement sur ce PC.</div>
+    <h2>Imprimer des livres</h2>
+    <p class="sub">Chaque exemplaire est compté et reçoit un numéro.</p>
+    <label>Livre</label>
+    <div class="buecher" id="buecher"></div>
+    <label for="anzahl">Nombre d'exemplaires</label>
+    <input id="anzahl" type="number" min="1" max="500" value="1">
+    <label for="kunde">Commande / client (ex. R261123-4821 ou « École Sousse »)</label>
+    <input id="kunde" type="text" maxlength="80" placeholder="obligatoire">
+    <button class="gross" id="drucken">Imprimer</button>
+    <div class="fehler" id="f2"></div>
+    <div id="fortschritt" style="display:none">
+      <div class="balken"><i id="balken"></i></div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="klein">Les livres sont envoyés directement à l'imprimante. Ne fermez pas la fenêtre pendant l'impression.</div>
+  </div>
+</div>
+<div id="druck"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let KEY = null, CODE = "", MAN = null, BUCH = null, laeuft = false;
+
+/* Schutz: kein Speichern, kein Quelltext, kein normales Drucken */
+document.addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ["s","p","u","c","a"].includes(k)) { e.preventDefault(); e.stopPropagation(); }
+  if (k === "f12") e.preventDefault();
+}, true);
+document.addEventListener("dragstart", e => e.preventDefault());
+
+function zeige(n){ ["s0","s1","s2"].forEach(s => $(s).style.display = s === n ? "block" : "none"); }
+
+const hex = h => new Uint8Array(h.match(/../g).map(x => parseInt(x,16)));
+async function schluessel(code){
+  const basis = await crypto.subtle.importKey("raw", new TextEncoder().encode(code), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name:"PBKDF2", salt: hex(MAN.salt), iterations: MAN.iter, hash:"SHA-256" },
+    basis, { name:"AES-GCM", length:256 }, false, ["decrypt"]);
+}
+async function entschluesseln(url){
+  const r = await fetch(url, { cache:"force-cache" });
+  if (!r.ok) throw new Error("Fichier introuvable : " + url);
+  const b = new Uint8Array(await r.arrayBuffer());
+  return crypto.subtle.decrypt({ name:"AES-GCM", iv: b.slice(0,12) }, KEY, b.slice(12));
+}
+
+async function start(){
+  if (NUR_MIT_DESKTOP_SYMBOL && !/PulsDruck\//.test(navigator.userAgent)) { zeige("s0"); return; }
+  try { MAN = await (await fetch("druck/buecher.json", { cache:"no-cache" })).json(); }
+  catch(e) { zeige("s1"); $("f1").textContent = "Impossible de charger les livres. Vérifiez Internet."; return; }
+  zeige("s1"); $("code").focus();
+}
+
+$("code").addEventListener("keydown", e => { if (e.key === "Enter") $("los").click(); });
+$("los").onclick = async () => {
+  $("f1").textContent = ""; $("los").disabled = true; $("los").textContent = "Vérification…";
+  try {
+    CODE = $("code").value.trim().toUpperCase();
+    KEY = await schluessel(CODE);
+    const t = new TextDecoder().decode(await entschluesseln("druck/check.bin"));
+    if (t !== "PULS-OK") throw 0;
+    $("code").value = "";
+    baueBuecher(); $("testhinweis").style.display = GOOGLE_TABELLE ? "none" : "block"; zeige("s2");
+  } catch(e) { KEY = null; $("f1").textContent = "Code incorrect."; }
+  $("los").disabled = false; $("los").textContent = "Ouvrir";
+};
+
+function baueBuecher(){
+  $("buecher").innerHTML = Object.entries(MAN.buecher).map(([id,b]) =>
+    `<div class="buch" data-id="${id}">${b.name}<small>${b.seiten} pages</small></div>`).join("");
+  document.querySelectorAll(".buch").forEach(d => d.onclick = () => {
+    document.querySelectorAll(".buch").forEach(x => x.classList.remove("an")); d.classList.add("an"); BUCH = d.dataset.id; });
+}
+
+/* Zähler: Google-Tabelle (echt) oder Testmodus (nur dieser PC) */
+async function reservieren(buch, anzahl, kunde){
+  if (!GOOGLE_TABELLE) {
+    let z = 0; try { z = parseInt(localStorage.getItem("test_" + buch) || "0"); } catch(e) {}
+    try { localStorage.setItem("test_" + buch, z + anzahl); } catch(e) {}
+    return { ok:true, von:z + 1, bis:z + anzahl };
+  }
+  const q = new URLSearchParams({ aktion:"druck", code:CODE, buch, anzahl, kunde });
+  const r = await fetch(GOOGLE_TABELLE + "?" + q.toString());
+  return r.json();
+}
+
+const warte = ms => new Promise(r => setTimeout(r, ms));
+function fortschritt(p, txt){ $("fortschritt").style.display = "block"; $("balken").style.width = Math.round(p*100) + "%"; $("status").textContent = txt; }
+
+$("drucken").onclick = async () => {
+  if (laeuft) return;
+  const f = $("f2"); f.textContent = "";
+  const anzahl = parseInt($("anzahl").value) || 0, kunde = $("kunde").value.trim();
+  if (!BUCH) { f.textContent = "Choisissez un livre."; return; }
+  if (anzahl < 1 || anzahl > 500) { f.textContent = "Nombre d'exemplaires : entre 1 et 500."; return; }
+  if (kunde.length < 3) { f.textContent = "Indiquez la commande ou le client."; return; }
+  laeuft = true; $("drucken").disabled = true;
+  const urls = [];
+  try {
+    fortschritt(0, "Enregistrement de l'impression…");
+    const res = await reservieren(BUCH, anzahl, kunde);
+    if (!res || !res.ok) throw new Error(res && res.fehler ? res.fehler : "Impression refusée.");
+    const b = MAN.buecher[BUCH], n = b.seiten;
+    for (let t = 1; t <= b.teile; t++) {
+      const paket = new Uint8Array(await entschluesseln(`druck/${BUCH}/teil${String(t).padStart(2,"0")}.bin`));
+      const dv = new DataView(paket.buffer);
+      for (let pos = 0; pos < paket.length; ) {
+        const len = dv.getUint32(pos); pos += 4;
+        urls.push(URL.createObjectURL(new Blob([paket.slice(pos, pos + len)], { type:"image/jpeg" }))); pos += len;
+      }
+      fortschritt(t / b.teile * 0.25, `Préparation du livre… ${urls.length} / ${n} pages`);
+    }
+    if (urls.length !== n) throw new Error("Livre incomplet. Vérifiez Internet et réessayez.");
+    const druck = $("druck");
+    for (let ex = res.von; ex <= res.bis; ex++) {
+      const nr = "Exemplaire n° " + String(ex).padStart(4,"0") + " · " + b.name + " · Valoris · valoris-recruiting.de";
+      for (let s = 0; s < n; s += SEITEN_PRO_AUFTRAG) {
+        druck.innerHTML = "";
+        for (let i = s; i < Math.min(n, s + SEITEN_PRO_AUFTRAG); i++) {
+          const d = document.createElement("div"); d.className = "seite";
+          const img = new Image(); img.src = urls[i]; d.appendChild(img);
+          const t = document.createElement("div"); t.className = "nr"; t.textContent = nr; d.appendChild(t);
+          druck.appendChild(d);
+        }
+        await Promise.all([...druck.querySelectorAll("img")].map(i => i.decode().catch(() => {})));
+        const fertig = (ex - res.von) + s / n, gesamt = res.bis - res.von + 1;
+        fortschritt(0.25 + 0.75 * fertig / gesamt, `Impression exemplaire ${ex - res.von + 1} / ${gesamt} (n° ${String(ex).padStart(4,"0")}) – pages ${s + 1}–${Math.min(n, s + SEITEN_PRO_AUFTRAG)}`);
+        window.print();
+        await warte(1500);
+      }
+    }
+    druck.innerHTML = "";
+    fortschritt(1, "");
+    $("status").innerHTML = `<span class="ok">✔ Terminé : ${anzahl} exemplaire(s) de ${b.name} envoyés à l'imprimante (n° ${String(res.von).padStart(4,"0")} à ${String(res.bis).padStart(4,"0")}).</span>`;
+  } catch(e) {
+    f.textContent = e.message || "Erreur.";
+  } finally {
+    $("druck").innerHTML = ""; urls.forEach(u => URL.revokeObjectURL(u));
+    laeuft = false; $("drucken").disabled = false;
+  }
+};
+
+start();
+</script>
+</body>
+</html>
