@@ -125,7 +125,7 @@ async function entschluesseln(url){
 
 async function start(){
   if (NUR_MIT_DESKTOP_SYMBOL && !/PulsDruck\//.test(navigator.userAgent)) { zeige("s0"); return; }
-  try { MAN = await (await fetch("druck/buecher.json", { cache:"no-cache" })).json(); }
+  try { MAN = await (await fetch("buecher.json", { cache:"no-cache" })).json(); }
   catch(e) { zeige("s1"); $("f1").textContent = "Impossible de charger les livres. Vérifiez Internet."; return; }
   zeige("s1"); $("code").focus();
 }
@@ -136,7 +136,7 @@ $("los").onclick = async () => {
   try {
     CODE = $("code").value.trim().toUpperCase();
     KEY = await schluessel(CODE);
-    const t = new TextDecoder().decode(await entschluesseln("druck/check.bin"));
+    const t = new TextDecoder().decode(await entschluesseln("check.bin"));
     if (t !== "PULS-OK") throw 0;
     $("code").value = "";
     baueBuecher(); $("testhinweis").style.display = GOOGLE_TABELLE ? "none" : "block"; zeige("s2");
@@ -181,7 +181,7 @@ $("drucken").onclick = async () => {
     if (!res || !res.ok) throw new Error(res && res.fehler ? res.fehler : "Impression refusée.");
     const b = MAN.buecher[BUCH], n = b.seiten;
     for (let t = 1; t <= b.teile; t++) {
-      const paket = new Uint8Array(await entschluesseln(`druck/${BUCH}/teil${String(t).padStart(2,"0")}.bin`));
+      const paket = new Uint8Array(await entschluesseln(`${BUCH}_teil${String(t).padStart(2,"0")}.bin`));
       const dv = new DataView(paket.buffer);
       for (let pos = 0; pos < paket.length; ) {
         const len = dv.getUint32(pos); pos += 4;

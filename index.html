@@ -15,7 +15,7 @@
    - Produkt hinzufügen: einen Block kopieren, darunter einfügen und
                          "id" (ohne Leerzeichen), Namen, Preis und Bild ändern
    - "vorschau": Name der Vorschau-Bilder im Ordner "preview"
-                 (z. B. "puls1" -> preview/puls1_01.jpg bis _18.jpg),
+                 (z. B. "puls1" -> puls1_01.jpg bis _18.jpg (ohne Ordner)),
                  leer lassen "" wenn es keine Vorschau gibt
    ===================================================================== */
 const PRODUKTE = [
@@ -395,7 +395,7 @@ function leserAuf(b){ leserBuch = b; leserSeite = 1; zeigeSeite(); document.getE
 function leserZu(){ document.getElementById("leser").style.display = "none"; }
 function blättern(d){ leserSeite = Math.min(MAX, Math.max(1, leserSeite + d)); zeigeSeite(); }
 function zeigeSeite(){
-  document.getElementById("leserBild").src = `preview/${leserBuch}_${String(leserSeite).padStart(2,"0")}.jpg`;
+  document.getElementById("leserBild").src = `${leserBuch}_${String(leserSeite).padStart(2,"0")}.jpg`;
   document.getElementById("leserNr").textContent = `${leserSeite} / ${MAX}`;
 }
 document.addEventListener("keydown", e => {
